@@ -1,5 +1,5 @@
 const express = require('express');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors')
 require("dotenv").config();
 const port = process.env.PORT || 5000;
@@ -28,6 +28,60 @@ async function run() {
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
+
+    const movieCollection = client.db('movieDB').collection('movies')
+
+    app.get('/movies', async(req, res)=>{
+        const allMovies = movieCollection.find();
+        const result = await allMovies.toArray();
+        res.send(result)
+
+    })
+
+    app.get('/movies/:id', async(req,res)=>{
+        const id = req.params.id
+        const query = {_id: new ObjectId(id)}
+        const result =  await movieCollection.findOne(query)
+        res.send(result)
+
+    } )
+
+    app.post('/movies', async (req, res)=>{
+        const newMovie = req.body
+        console.log(newMovie)
+        const result = await movieCollection.insertOne(newMovie)
+        res.send(result)
+    })
+
+    app.put('/movies/:id', async(req, res)=>{
+        const id = req.params.id
+        const filter = {_id: new ObjectId(id)}
+        const options = {upsert: true}
+        const updatedMovie = req.body
+        const movie = {
+            $set: {
+                movie_poster: updatedMovie.movie_poster,
+                 movie_title: updatedMovie.movie_title, 
+                 genre: updatedMovie.genre,
+                  duration: updatedMovie.duration,
+                   release_year: updatedMovie.release_year,
+                    rating: updatedMovie.rating,
+                     summary: updatedMovie.summary
+            }
+        }
+        const result =  await movieCollection.updateOne(filter, movie, options )
+        res.send(result)
+
+    })
+
+    app.delete('/movies/:id', async(req,res)=>{
+        const id = req.params.id
+        const query = {_id: new ObjectId(id)}
+        const result = await movieCollection.deleteOne(query)
+        res.send(result)
+    })
+
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
