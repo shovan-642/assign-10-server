@@ -30,10 +30,17 @@ async function run() {
     await client.db("admin").command({ ping: 1 });
 
     const movieCollection = client.db('movieDB').collection('movies')
+    const favoriteMovieCollection = client.db('movieDB').collection('favoriteMovie')
 
     app.get('/movies', async(req, res)=>{
         const allMovies = movieCollection.find();
         const result = await allMovies.toArray();
+        res.send(result)
+
+    })
+    app.get('/favoriteMovies', async(req, res)=>{
+        const allFavoriteMovies = favoriteMovieCollection.find();
+        const result = await allFavoriteMovies.toArray();
         res.send(result)
 
     })
@@ -48,10 +55,16 @@ async function run() {
 
     app.post('/movies', async (req, res)=>{
         const newMovie = req.body
-        console.log(newMovie)
         const result = await movieCollection.insertOne(newMovie)
         res.send(result)
     })
+
+    app.post('/favoriteMovies', async (req, res)=>{
+      const newFavoriteMovie = req.body
+      console.log(newFavoriteMovie)
+      const result = await favoriteMovieCollection.insertOne(newFavoriteMovie)
+      res.send(result)
+  })
 
     app.put('/movies/:id', async(req, res)=>{
         const id = req.params.id
