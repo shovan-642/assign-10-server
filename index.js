@@ -1,7 +1,7 @@
+require("dotenv").config();
 const express = require('express');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors')
-require("dotenv").config();
 const port = process.env.PORT || 5000;
 
 const app = express();
@@ -25,19 +25,34 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+   
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+   
 
     const movieCollection = client.db('movieDB').collection('movies')
     const favoriteMovieCollection = client.db('movieDB').collection('favoriteMovie')
 
     app.get('/movies', async(req, res)=>{
-        const allMovies = movieCollection.find();
+      const {search}= req.query  
+      let option = {}
+      if(search){
+        option = {movie_title	: { $regex:search, $options:"i"}}
+      }
+   
+        const allMovies = movieCollection.find(option);
         const result = await allMovies.toArray();
         res.send(result)
 
     })
+
+    app.get('/top-rated-movie', async(req, res)=>{
+      const topRatedMovie = movieCollection.find().sort({rating: -1}).limit(6)
+      const result = await topRatedMovie.toArray();
+      res.send(result)
+
+  })
+
+
     app.get('/favoriteMovies', async(req, res)=>{
         const allFavoriteMovies = favoriteMovieCollection.find();
         const result = await allFavoriteMovies.toArray();
@@ -105,7 +120,6 @@ async function run() {
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    // await client.close();
   }
 }
 run().catch(console.dir);
